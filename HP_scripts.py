@@ -205,8 +205,7 @@ def simulate_timestamps_till_horizon(mu, alpha, beta, Thorizon = 60, \
         return ts, i, accepted_event_intensity, rejected_points, rpy
     return ts
 
-#########################################################################
-#pd0 = hpd(x ̇grid0, pdf0, new ̇area0, x ̇grid0[1]-x ̇grid0[0], 2, 71, 0.0015,
+
 
 
 """ Simulate timestamps of HP till time T_horizon """
@@ -464,7 +463,8 @@ def Hawkes_Nloglike(time_stamp, mu, alpha, beta, node = -1, num_of_tstamp=-1):
 
 
 ########################################################
-# Expectation-Maximisation function modified using MATLAB code from Dr. Naratip 
+# Expectation-Maximisation function modified using MATLAB code from Dr. Naratip
+# Note: There is a bug in one of the line of this function and needs to be fixed
 ########################################################
 
 def EM(mu_guess, alpha_guess, beta_guess, timestamp, Maxiter=100, num_of_tstamp = -1):
@@ -535,7 +535,7 @@ def EM(mu_guess, alpha_guess, beta_guess, timestamp, Maxiter=100, num_of_tstamp 
         #omega_k = Nlength*alpha_new/sum(nonzeros(PP.*tdiff))
         #omega_k = num_of_tstamp*alpha_tilde_k/np.sum(np.sum(low_tr_times_dt, axis=0)) # tril(arr) return lower triangular matrix of an array arr
 
-        omega_k =  num_of_tstamp*alpha_tilde_k/np.sum(sparse.find(PP*Tdiff)[-1])
+        omega_k =  num_of_tstamp*alpha_tilde_k/np.sum(sparse.find(PP*Tdiff)[-1]) # This line needds to be fixed
         mu = mu_k; alpha_tilde = alpha_tilde_k*omega_k; beta = omega_k
  
         NLL[k] = Hawkes_Nloglike(timestamp, mu, [alpha_tilde], beta, node=1 ) # negative likelihood
@@ -544,102 +544,7 @@ def EM(mu_guess, alpha_guess, beta_guess, timestamp, Maxiter=100, num_of_tstamp 
 
 
 
-########################################################
-# Python functions that plots surfaces and contours of negative log-likelihoods
-########################################################
 
-def plot_surface(X, Y, Nlikelihood, title, colorscale='YlGnBu', isSurface=True):
-    if isSurface:
-        fig = go.Figure(data=[go.Surface(x=X, y=Y, z=Nlikelihood)])
-
-        fig.update_traces(contours_z=dict( show=True, usecolormap=True,highlightcolor="limegreen",project_z=True))
-        fig.update_layout(title_text=title)
-        fig['layout']['xaxis'].update(title=r'$\alpha$')
-        fig['layout']['yaxis'].update(title=r'$\beta$')
-    else:
-
-        fig = go.Figure(data =
-    go.Contour(z=Nlikelihood, x=X, y=Y, colorscale=colorscale,contours=dict(start=np.min(Nlikelihood),end=np.max(Nlikelihood),size=5,)))
-
-        fig.update_layout(title_text=title)
-        fig['layout']['xaxis'].update(title=r'$\alpha$')
-        fig['layout']['yaxis'].update(title=r'$\beta$')
-    fig.show()
-
-
-# https://plotly.com/python/3d-subplots/
-def plot_multiple_surfaces(X1, Y1, X2, Y2, Nlikelihoods_col1, Nlikelihoods_col2, colorscale, subplot_titles,height=800,width=900):
-
-    fig = make_subplots(
-        rows=3, cols=2,
-        specs=[[{'type': 'surface'}, {'type': 'surface'}],
-            [{'type': 'surface'}, {'type': 'surface'}],[{'type': 'surface'}, {'type': 'surface'}]])
-    # adding surfaces to subplots.
-    # Plot surfaces over row 1,2,3 and column 1 
-    for i in range(3):
-        fig.add_trace(
-            go.Surface(x=X1, y=Y1, z=Nlikelihoods_col1[i], colorscale=colorscale[i], showscale=False),
-            row=i+1, col=1)
-        fig.update_layout(title_text=subplot_titles)
-    # Plot surfaces over row 1,2,3 and column 2
-    for j in range(3):
-        fig.add_trace(
-            go.Surface(x=X2, y=X2, z=Nlikelihoods_col2[j], colorscale=colorscale[j], showscale=False),
-            row=j+1, col=2)
-        fig.update_layout(title_text=subplot_titles)
-
-    fig.update_layout(
-        title_text='3D surface subplots with different colorscales',
-        height=height,
-        width=width
-    )
-
-    fig.show()
-
-
-def plot_multiple_contours(X1, Y1, X2, Y2, Nlikelihoods_col1, Nlikelihoods_col2, subplot_titles, colorscale, height=750, width=1000):
-
-    fig = make_subplots(
-        rows=3, cols=2,
-        specs=[[{'type': 'contour'}, {'type': 'contour'}],
-            [{'type': 'contour'}, {'type': 'contour'}],[{'type': 'contour'}, {'type': 'contour'}]])
-    # adding contours to subplots.
-    # Plot contours over row 1,2,3 and column 1 
-    for i in range(3):
-    #             fig = go.Figure(data =
-    # go.Contour(z=Nlikelihood, x=X, y=Y, colorscale=colorscale,contours=dict(start=0,end=8,size=2,)))
-        
-        fig.add_trace(
-            go.Contour(x=X1, y=Y1, z=Nlikelihoods_col1[i], colorscale=colorscale[i], contours=dict(start=0,end=8,size=2,),
-            showscale=False), row=i+1, col=1)
-        fig.update_layout(title_text=subplot_titles)
-    # Plot contours over row 1,2,3 and column 2
-    for j in range(3):
-    #             fig = go.Figure(data =
-    # go.Contour(z=Nlikelihood, x=X, y=Y, colorscale=colorscale,contours=dict(start=0,end=8,size=2,)))
-
-
-        fig.add_trace(
-            go.Contour(x=X2, y=Y2, z=Nlikelihoods_col2[j], colorscale=colorscale[j], contours=dict(start=0,end=8,size=2,),
-             showscale=False), row=j+1, col=2)
-        fig.update_layout(title_text=subplot_titles)
-
-    fig.update_layout(
-        title_text='Contour subplots with different colorscales',
-        height=height,
-        width=width
-    )
-
-    fig.show()
-
-
-
-#df = pd.read_csv('EM_test/seq_1Dhawkes_test.txt', sep='   ', delim_whitespace=True)
-#df = pd.read_csv('EM_test/seq_1Dhawkes_test.txt')
-#df = pd.pivot_table(df, values=)
-
-#df['timestamp']=df.columns
-#print(df)
 # Use the if condition below to run functions in this script
 if __name__ == "main":
     print("Used as a standalone scipt")
